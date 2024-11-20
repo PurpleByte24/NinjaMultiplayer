@@ -475,13 +475,13 @@ attack1_1.x = 0
 attack1_1.y = HEIGHT + 50
 life11 = Actor("heart.png")
 life11.x = WIDTH / 10 * 7
-life11.y = HEIGHT / 10
+life11.y = HEIGHT / 7
 life21 = Actor("heart.png")
 life21.x = WIDTH / 10 * 8
-life21.y = HEIGHT / 10
+life21.y = HEIGHT / 7
 life31 = Actor("heart.png")
 life31.x = WIDTH / 10 * 9
-life31.y = HEIGHT / 10
+life31.y = HEIGHT / 7
 
 ninja2 = Actor(f"ninja_{ChosenColor_2}.png")
 ninja2.x = WIDTH / 10
@@ -499,13 +499,13 @@ attack2_1.x = 0
 attack2_1.y = HEIGHT + 50
 life12 = Actor("heart.png")
 life12.x = WIDTH / 10 
-life12.y = HEIGHT / 10
+life12.y = HEIGHT / 7
 life22 = Actor("heart.png")
 life22.x = WIDTH / 10 * 2
-life22.y = HEIGHT / 10
+life22.y = HEIGHT / 7
 life32 = Actor("heart.png")
 life32.x = WIDTH / 10 * 3
-life32.y = HEIGHT / 10
+life32.y = HEIGHT / 7
 
 # Environment
 Bottom = Rect((0, HEIGHT / 10 * 9.5), (WIDTH, HEIGHT / 10 * 0.5))
@@ -529,6 +529,8 @@ countdown_number = 3
 countdown_as_str = ""
 winning_color = None
 winner = ""
+restart_button = Rect((WIDTH / 4, HEIGHT / 2), (WIDTH / 2, HEIGHT / 5))
+outline_rest_but = Rect((WIDTH / 4, HEIGHT / 2), (WIDTH / 2, HEIGHT / 5))
 
 # Zur Wahl stehende Farben
 abstand = WIDTH / 50
@@ -687,12 +689,18 @@ player1_choice = True
 first_index=None
 
 def on_mouse_move(pos):
-    global cursor
+    global cursor, above
     cursor_x, cursor_y = pos
     cursor = Rect((cursor_x, cursor_y), (1, 1))
+    if game_mode == 4:
+        above = False
+        if cursor.colliderect(restart_button):
+            above = True
     
 def on_mouse_down(pos):
-    global cursor, ChosenColor_1, ChosenColor_2, player1_choice, game_mode, chosen_rect_1, first_index, chosing_player, player1_name, player2_name
+    global cursor, ChosenColor_1, ChosenColor_2, player1_choice, game_mode, chosen_rect_1, \
+           first_index, chosing_player, player1_name, player2_name, above
+    
     if game_mode == -1:
         if player1_choice:
             for index, colored_rect in enumerate(possible_colors):
@@ -707,6 +715,11 @@ def on_mouse_down(pos):
                 if cursor.colliderect(colored_rect) and index != first_index:
                     ChosenColor_2 = colors_as_str[index]
                     game_mode = 0
+                    above = False
+                    
+    if game_mode == 4:
+        if above:
+            reset_game()
         
 # Programm   
 def moving():
@@ -793,7 +806,11 @@ def draw():
         life11.draw()
         life21.draw()
         life31.draw()
-        
+        if ChosenColor_1 in dark_colors:
+            o_color = "white"
+        else:
+            o_color = "black"
+        screen.draw.text(player1_name, (WIDTH / 10 * 7, HEIGHT / 20), fontsize=30, color=ChosenColor_1, owidth=1, ocolor=o_color)
     
         ninja2.draw()
         attack2_3.draw()
@@ -809,6 +826,11 @@ def draw():
         life12.draw()
         life22.draw()
         life32.draw()
+        if ChosenColor_2 in dark_colors:
+            o_color = "white"
+        else:
+            o_color = "black"
+        screen.draw.text(player2_name, (WIDTH/10*1, HEIGHT/20), fontsize=30, color=ChosenColor_2, owidth=1, ocolor=o_color)
     
         if game_mode == 0:
             screen.draw.text(countdown_as_str, (WIDTH / 2, HEIGHT / 2), fontsize=100, color="orange", owidth=1, ocolor="white")
@@ -822,7 +844,11 @@ def draw():
             if life_player1 == "0" and life_player2 == "0":
                 WINNER = "Winner is no one!"
                 winning_color = "orange"
-            screen.draw.text(WINNER, (WIDTH / 5, HEIGHT / 4), fontsize=50, color=winning_color, owidth=1, ocolor=o_color)            
+            screen.draw.text(WINNER, (WIDTH / 5, HEIGHT / 4), fontsize=50, color=winning_color, owidth=1, ocolor=o_color)
+            screen.draw.filled_rect(restart_button, "grey")
+            screen.draw.text("REVENGE", (WIDTH / 3, HEIGHT / 1.75), fontsize = 50, color = (0,0,155))
+            if game_mode == 4 and above:
+                screen.draw.rect(outline_rest_but, (0,0,155))
         
 def update():
     global game_mode, WINNER
@@ -852,5 +878,82 @@ def update():
     if game_mode == 3:
         open_logins()
         update_data()
+
+def reset_game():
+    global player1, player2, ninja1, ninja2, life11, life21, life31, life12, life22, life32, \
+           attack1_3, attack1_2, attack1_1, attack2_3, attack2_2, attack2_1, \
+           game_mode, countdown_number, countdown_as_str, winning_color, winner, \
+           x1, x2, x3, x4, x5, Base1, Base2, Base3, Base4, Base5
+      
+    player1 = PLAYER1(ChosenColor_1)
+    player2 = PLAYER2(ChosenColor_2)
+
+    # Actors
+    ninja1 = Actor(f"ninja_{ChosenColor_1}_left.png")
+    ninja1.x = WIDTH / 10 * 9
+    ninja1.y = HEIGHT / 10 * 9
+    ninja1.vx = 0
+    ninja1.vy = 0
+    attack1_3 = Actor(f"attack_{ChosenColor_1}_3r.png")
+    attack1_3.x = 0
+    attack1_3.y = HEIGHT + 50
+    attack1_2 = Actor(f"attack_{ChosenColor_1}_2r.png")
+    attack1_2.x = 0
+    attack1_2.y = HEIGHT + 50
+    attack1_1 = Actor(f"attack_{ChosenColor_1}_1r.png")
+    attack1_1.x = 0
+    attack1_1.y = HEIGHT + 50
+    life11 = Actor("heart.png")
+    life11.x = WIDTH / 10 * 7
+    life11.y = HEIGHT / 7
+    life21 = Actor("heart.png")
+    life21.x = WIDTH / 10 * 8
+    life21.y = HEIGHT / 7
+    life31 = Actor("heart.png")
+    life31.x = WIDTH / 10 * 9
+    life31.y = HEIGHT / 7
+
+    ninja2 = Actor(f"ninja_{ChosenColor_2}.png")
+    ninja2.x = WIDTH / 10
+    ninja2.y = HEIGHT / 10 * 9
+    ninja2.vx = 0
+    ninja2.vy = 0
+    attack2_3 = Actor(f"attack_{ChosenColor_2}_3r.png")
+    attack2_3.x = 0
+    attack2_3.y = HEIGHT + 50
+    attack2_2 = Actor(f"attack_{ChosenColor_2}_2r.png")
+    attack2_2.x = 0
+    attack2_2.y = HEIGHT + 50
+    attack2_1 = Actor(f"attack_{ChosenColor_2}_1r.png")
+    attack2_1.x = 0
+    attack2_1.y = HEIGHT + 50
+    life12 = Actor("heart.png")
+    life12.x = WIDTH / 10 
+    life12.y = HEIGHT / 7
+    life22 = Actor("heart.png")
+    life22.x = WIDTH / 10 * 2
+    life22.y = HEIGHT / 7
+    life32 = Actor("heart.png")
+    life32.x = WIDTH / 10 * 3
+    life32.y = HEIGHT / 7
+
+    # Environment
+    x1 = get_xy.return_x1()
+    x2 = get_xy.return_x2()
+    x3 = get_xy.return_x3()
+    x4 = get_xy.return_x4()
+    x5 = get_xy.return_x5()
+    Base1 = Rect((x1, HEIGHT / 10 * 8.25), (120, 5))
+    Base2 = Rect((x2, HEIGHT / 10 * 8.25), (120, 5))
+    Base3 = Rect((x3, HEIGHT / 10 * 6.5), (150, 5))
+    Base4 = Rect((x4, HEIGHT / 10 * 4.75), (120, 5))
+    Base5 = Rect((x5, HEIGHT / 10 * 4.75), (120, 5))
+
+    # Variabeln Gameplay
+    game_mode = 0
+    countdown_number = 3
+    countdown_as_str = ""
+    winning_color = None
+    winner = ""
         
 pgzrun.go()
