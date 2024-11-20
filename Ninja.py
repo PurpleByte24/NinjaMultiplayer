@@ -3,6 +3,7 @@ os.environ["SDL_VIDEO_WINDOW_POS"] = "50, 100"
 import pgzrun
 from find_yx import Get_X_Y
 
+# Classes
 class PLAYER1:
     def __init__(self, ninja_color):
         self.ninja_color = ninja_color
@@ -472,6 +473,15 @@ attack1_2.y = HEIGHT + 50
 attack1_1 = Actor(f"attack_{ChosenColor_1}_1r.png")
 attack1_1.x = 0
 attack1_1.y = HEIGHT + 50
+life11 = Actor("heart.png")
+life11.x = WIDTH / 10 * 7
+life11.y = HEIGHT / 10
+life21 = Actor("heart.png")
+life21.x = WIDTH / 10 * 8
+life21.y = HEIGHT / 10
+life31 = Actor("heart.png")
+life31.x = WIDTH / 10 * 9
+life31.y = HEIGHT / 10
 
 ninja2 = Actor(f"ninja_{ChosenColor_2}.png")
 ninja2.x = WIDTH / 10
@@ -487,6 +497,15 @@ attack2_2.y = HEIGHT + 50
 attack2_1 = Actor(f"attack_{ChosenColor_2}_1r.png")
 attack2_1.x = 0
 attack2_1.y = HEIGHT + 50
+life12 = Actor("heart.png")
+life12.x = WIDTH / 10 
+life12.y = HEIGHT / 10
+life22 = Actor("heart.png")
+life22.x = WIDTH / 10 * 2
+life22.y = HEIGHT / 10
+life32 = Actor("heart.png")
+life32.x = WIDTH / 10 * 3
+life32.y = HEIGHT / 10
 
 # Environment
 Bottom = Rect((0, HEIGHT / 10 * 9.5), (WIDTH, HEIGHT / 10 * 0.5))
@@ -504,7 +523,7 @@ Base3 = Rect((x3, HEIGHT / 10 * 6.5), (150, 5))
 Base4 = Rect((x4, HEIGHT / 10 * 4.75), (120, 5))
 Base5 = Rect((x5, HEIGHT / 10 * 4.75), (120, 5))
 
-# Variabeln
+# Variabeln Gameplay
 game_mode = -3
 countdown_number = 3
 countdown_as_str = ""
@@ -590,8 +609,7 @@ def update_data():
                 if name == player2_name:
                     new_number = int(wins) + 1
                     lines[i] = f"{name}, {new_number}\n"
-                    break
-            
+                    break         
         with open("people.txt", 'w') as file:
             file.writelines(lines)            
     except FileNotFoundError:
@@ -661,7 +679,7 @@ def on_key_down(key):
                 game_mode = -4
             if chosing_player == "Player 2":
                 game_mode = -5
-            
+                
 # Cursor
 cursor = Rect((550, 550), (1, 1))
 colors_as_str = ["red", "yellow", "green", "blue", "purple", "black", "white"]
@@ -754,32 +772,43 @@ def draw():
             
     if game_mode >= 0:
         screen.draw.rect(Bottom, "white")
+        Background.draw()
+        screen.draw.filled_rect(Base1, "white")
+        screen.draw.filled_rect(Base2, "white")
+        screen.draw.filled_rect(Base3, "white")
+        screen.draw.filled_rect(Base4, "white")
+        screen.draw.filled_rect(Base5, "white")
+        
         ninja1.draw()
         attack1_3.draw()
         attack1_2.draw()
         attack1_1.draw()
         life_player1 = player1.update_life()
-        if game_mode >=1:
-            o_color = "black"
-            if ChosenColor_1 in dark_colors:
-                o_color = "white"
-            screen.draw.text(life_player1, (WIDTH - 2*rand, HEIGHT / 10), fontsize=50, color=ChosenColor_1, owidth=1, ocolor=o_color)
+        if life_player1 == "2":
+            life11.image = "heart_dead.png"
+        if life_player1 == "1":
+            life21.image = "heart_dead.png"
+        if life_player1 == "0":
+            life31.image = "heart_dead.png"
+        life11.draw()
+        life21.draw()
+        life31.draw()
+        
     
         ninja2.draw()
         attack2_3.draw()
         attack2_2.draw()
         attack2_1.draw()
         life_player2 = player2.update_life()
-        if game_mode >=1:
-            o_color = "black"
-            if ChosenColor_2 in dark_colors:
-                o_color = "white"
-            screen.draw.text(life_player2, (rand, HEIGHT / 10), fontsize=50, color=ChosenColor_2, owidth=1, ocolor=o_color)  
-        screen.draw.filled_rect(Base1, "white")
-        screen.draw.filled_rect(Base2, "white")
-        screen.draw.filled_rect(Base3, "white")
-        screen.draw.filled_rect(Base4, "white")
-        screen.draw.filled_rect(Base5, "white")
+        if life_player2 == "2":
+            life32.image = "heart_dead.png"
+        if life_player2 == "1":
+            life22.image = "heart_dead.png"
+        if life_player2 == "0":
+            life12.image = "heart_dead.png"
+        life12.draw()
+        life22.draw()
+        life32.draw()
     
         if game_mode == 0:
             screen.draw.text(countdown_as_str, (WIDTH / 2, HEIGHT / 2), fontsize=100, color="orange", owidth=1, ocolor="white")
@@ -824,5 +853,4 @@ def update():
         open_logins()
         update_data()
         
-
 pgzrun.go()
