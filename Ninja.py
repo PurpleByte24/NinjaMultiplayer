@@ -209,11 +209,12 @@ class PLAYER1:
         return self.life_as_str
     
     def life_minus(self):
-        global game_mode, winner
+        global game_mode, winning_color, winner
         self.life -= 1
         if self.life == 0:
             game_mode = 2
-            winner = ChosenColor_2
+            winning_color = ChosenColor_2
+            winner = player2_name
     
     def update(self):
         self.update_life()
@@ -430,11 +431,12 @@ class PLAYER2:
         return self.life_as_str
     
     def life_minus(self):
-        global game_mode, winner
+        global game_mode, winning_color, winner
         self.life -= 1
         if self.life == 0:
             game_mode = 2
-            winner = ChosenColor_1
+            winning_color = ChosenColor_1
+            winner = player1_name
     
     def update(self):
         self.update_life()
@@ -503,9 +505,10 @@ Base4 = Rect((x4, HEIGHT / 10 * 4.75), (120, 5))
 Base5 = Rect((x5, HEIGHT / 10 * 4.75), (120, 5))
 
 # Variabeln
-game_mode = -1
+game_mode = -3
 countdown_number = 3
 countdown_as_str = ""
+winning_color = None
 winner = None
 
 # Zur Wahl stehende Farben
@@ -526,13 +529,71 @@ dark_colors = ["red", "blue", "purple", "black"]
 light_colors = [yellow, green, white]
 above_rect = None
 
+# Username
+chosing_player = "Player 1"
+searchbar = f"{chosing_player}, please type in your username"
+letters = ["Q","W", "E", "R","T","Z", "U","I","O","P","A","S","D","F","G","H","J","K","L","Y","X","C","V","B","N","M"]
+logs = {}
+possible_logins = ""
+first = True
+no_username = "If you can't find your username or know that you don't have one, press 'ENTER' to create one."
+player1_name = ""
+player2_name = ""
+
+def open_logins():
+    try:
+        with open("people.txt", "r") as file:
+            log_ins = {}
+            lines = file.readlines()
+            for line in lines:
+                try:
+                    if ", " in line:
+                        name, wins = line.strip().split(", ")
+                        log_ins[name] = int(wins)
+                except ValueError:
+                    pass
+            return log_ins             
+    except FileNotFoundError:
+        return {}
+    
+def generate_logs(searchbar):
+    global possible_logins
+    log_ins = open_logins()
+    filtered_logs = {name: wins for name, wins in log_ins.items() if name.startswith(searchbar)}
+    possible_logins = next(iter(filtered_logs), "")
+    return filtered_logs
+
+def on_key_down(key):
+    global searchbar, logs, first, game_mode, player1_name, player2_name, chosing_player
+    if game_mode <= -2:
+        if first:
+            searchbar = ""
+            first = False
+        if key == keys.BACKSPACE:
+            searchbar = searchbar[:-1]
+        elif key.name in letters:
+            searchbar += key.name
+        elif key == keys.RETURN:
+            if game_mode == -3:
+                game_mode = -2
+                player1_name = possible_logins
+                chosing_player = "Player 2"
+                searchbar = f"{chosing_player}, please type in your username"
+                first = True
+            elif game_mode == -2:
+                game_mode = -1
+                player2_name = possible_logins
+                chosing_player = player1_name
+        logs = generate_logs(searchbar)
+    if game_mode <=3:
+        if key == keys.ESCAPE:
+            quit()
+            
 # Cursor
 cursor = Rect((550, 550), (1, 1))
 colors_as_str = ["red", "yellow", "green", "blue", "purple", "black", "white"]
 player1_choice = True
 first_index=None
-choose = True
-chosing_player = "Player 1"
 
 def on_mouse_move(pos):
     global cursor
@@ -540,26 +601,22 @@ def on_mouse_move(pos):
     cursor = Rect((cursor_x, cursor_y), (1, 1))
     
 def on_mouse_down(pos):
-    global cursor, ChosenColor_1, ChosenColor_2, player1_choice, game_mode, chosen_rect_1, first_index, choose, chosing_player
-    if choose:
+    global cursor, ChosenColor_1, ChosenColor_2, player1_choice, game_mode, chosen_rect_1, first_index, chosing_player, player1_name, player2_name
+    if game_mode == -1:
         if player1_choice:
-            cursor_x, cursor_y = pos
-            cursor = Rect((cursor_x, cursor_y), (1, 1))
             for index, colored_rect in enumerate(possible_colors):
                 if cursor.colliderect(colored_rect):
                     chosen_rect_1 = possible_colors.pop(index)
                     ChosenColor_1 = colors_as_str[index]
                     first_index = index
                     player1_choice = False
-                    chosing_player = "Player 2"
-                
+                    chosing_player = player2_name
         else:
             for index, colored_rect in enumerate(all_colors):
                 if cursor.colliderect(colored_rect) and index != first_index:
                     ChosenColor_2 = colors_as_str[index]
                     game_mode = 0
-                    choose = False
-
+        
 # Programm   
 def moving():
     global cursor, above, above_rect 
@@ -588,9 +645,20 @@ def initialize():
     player2.did_i_hit(player1)
 
 def draw():
-    global winner    
+    global winning_color    
     screen.clear()
-    screen.fill(WHITE)    
+    screen.fill(WHITE)
+    if game_mode < -1:
+        logs_to_display = "\n".join([f"Username: {name}, Wins: {wins}" for name, wins in logs.items()])
+        Background.draw()
+        screen.draw.text(no_username, ((WIDTH/100), HEIGHT / 10), fontsize=15, color="orange")
+        if searchbar != "" and searchbar != f"{chosing_player}, please type in your username":
+            screen.draw.text(possible_logins, ((WIDTH/100), HEIGHT / 8), fontsize=35, color=(127, 82, 0))
+            screen.draw.text(logs_to_display, ((WIDTH/100), HEIGHT / 4), fontsize=30, color="orange")
+        screen.draw.text(searchbar, ((WIDTH/100), HEIGHT / 8), fontsize=35, color="orange")
+        screen.draw.line((0, HEIGHT/5), (WIDTH, HEIGHT/5), color="white")
+        
+        
     if game_mode == -1:
         Background.draw()
         screen.draw.filled_rect(red, "red")
@@ -645,14 +713,16 @@ def draw():
             WINNER = f"Winner is {winner}!"
             if life_player1 == "0" and life_player2 == "0":
                 WINNER = "Winner is no one!"
-                winner = "orange"
-            screen.draw.text(WINNER, (WIDTH / 5, HEIGHT / 4), fontsize=50, color=winner, owidth=1, ocolor=o_color)            
+                winning_color = "orange"
+            screen.draw.text(WINNER, (WIDTH / 5, HEIGHT / 4), fontsize=50, color=winning_color, owidth=1, ocolor=o_color)            
         
 def update():
     global game_mode, WINNER
+    if game_mode == -3:
+        generate_logs(searchbar)
+
     if game_mode == -1:
-        moving()
-        
+        moving()      
     if game_mode == 0 and countdown_number == 3:
         initialize()
         ninja1.image = f"ninja_{ChosenColor_1}_left.png"
