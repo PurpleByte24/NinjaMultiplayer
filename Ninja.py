@@ -536,9 +536,11 @@ letters = ["Q","W", "E", "R","T","Z", "U","I","O","P","A","S","D","F","G","H","J
 logs = {}
 possible_logins = ""
 first = True
-no_username = "If you can't find your username or know that you don't have one, press 'ENTER' to create one."
+no_username = "If you can't find your username or know that you don't have one, press 'SPACE' to create one."
 player1_name = ""
 player2_name = ""
+instr_login = "Type in your name and press 'ENTER' to confirm"
+create_login = ""
 
 def open_logins():
     try:
@@ -564,16 +566,22 @@ def generate_logs(searchbar):
     return filtered_logs
 
 def on_key_down(key):
-    global searchbar, logs, first, game_mode, player1_name, player2_name, chosing_player
+    global searchbar, logs, first, game_mode, player1_name, player2_name, chosing_player, create_login
     if game_mode <= -2:
         if first:
             searchbar = ""
             first = False
         if key == keys.BACKSPACE:
-            searchbar = searchbar[:-1]
+            if game_mode > -4:
+                searchbar = searchbar[:-1]
+            if game_mode <= -4:
+               create_login = create_login[:-1] 
         elif key.name in letters:
-            searchbar += key.name
-        elif key == keys.RETURN:
+            if game_mode > -4:
+                searchbar += key.name
+            if game_mode <= -4:
+                create_login += key.name
+        elif key == keys.RETURN and possible_logins in logs:
             if game_mode == -3:
                 game_mode = -2
                 player1_name = possible_logins
@@ -584,10 +592,26 @@ def on_key_down(key):
                 game_mode = -1
                 player2_name = possible_logins
                 chosing_player = player1_name
+            elif game_mode == -4:
+                player1_name = create_login
+                chosing_player = "Player 2"
+                first = True
+                create_login = ""
+                searchbar = f"{chosing_player}, please type in your username"
+                game_mode = -3
+            elif game_mode == -5:
+                player2_name = create_login
+                game_mode = -1
+                chosing_player = player1_name
+
         logs = generate_logs(searchbar)
-    if game_mode <=3:
-        if key == keys.ESCAPE:
-            quit()
+        if key == keys.SPACE:
+            if chosing_player == "Player 1":
+                game_mode = -4
+            if chosing_player == "Player 2":
+                game_mode = -5
+    if key == keys.ESCAPE:
+        quit()
             
 # Cursor
 cursor = Rect((550, 550), (1, 1))
@@ -648,9 +672,13 @@ def draw():
     global winning_color    
     screen.clear()
     screen.fill(WHITE)
-    if game_mode < -1:
-        logs_to_display = "\n".join([f"Username: {name}, Wins: {wins}" for name, wins in logs.items()])
-        Background.draw()
+    Background.draw()
+    if game_mode <= -4:
+        screen.draw.text(instr_login, ((WIDTH/100), HEIGHT / 10), fontsize=30, color="orange")
+        screen.draw.text(f"Username: {create_login}", ((WIDTH/100), HEIGHT / 4), fontsize=35, color="orange")
+        
+    if game_mode < -1 and game_mode > -4:
+        logs_to_display = "\n".join([f"Username: {name}, Wins: {wins}" for name, wins in logs.items()])     
         screen.draw.text(no_username, ((WIDTH/100), HEIGHT / 10), fontsize=15, color="orange")
         if searchbar != "" and searchbar != f"{chosing_player}, please type in your username":
             screen.draw.text(possible_logins, ((WIDTH/100), HEIGHT / 8), fontsize=35, color=(127, 82, 0))
@@ -660,7 +688,6 @@ def draw():
         
         
     if game_mode == -1:
-        Background.draw()
         screen.draw.filled_rect(red, "red")
         screen.draw.filled_rect(yellow, "yellow")
         screen.draw.filled_rect(green, "green")
@@ -678,7 +705,6 @@ def draw():
             
     if game_mode >= 0:
         screen.draw.rect(Bottom, "white")
-        Background.draw()
         ninja1.draw()
         attack1_3.draw()
         attack1_2.draw()
@@ -720,7 +746,6 @@ def update():
     global game_mode, WINNER
     if game_mode == -3:
         generate_logs(searchbar)
-
     if game_mode == -1:
         moving()      
     if game_mode == 0 and countdown_number == 3:
