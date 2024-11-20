@@ -214,7 +214,7 @@ class PLAYER1:
         if self.life == 0:
             game_mode = 2
             winning_color = ChosenColor_2
-            winner = player2_name
+            winner += player2_name
     
     def update(self):
         self.update_life()
@@ -436,7 +436,7 @@ class PLAYER2:
         if self.life == 0:
             game_mode = 2
             winning_color = ChosenColor_1
-            winner = player1_name
+            winner += player1_name
     
     def update(self):
         self.update_life()
@@ -509,7 +509,7 @@ game_mode = -3
 countdown_number = 3
 countdown_as_str = ""
 winning_color = None
-winner = None
+winner = ""
 
 # Zur Wahl stehende Farben
 abstand = WIDTH / 50
@@ -554,10 +554,10 @@ def open_logins():
                         log_ins[name] = int(wins)
                 except ValueError:
                     pass
-            return log_ins             
+            return log_ins       
     except FileNotFoundError:
         return {}
-    
+
 def generate_logs(searchbar):
     global possible_logins
     log_ins = open_logins()
@@ -565,22 +565,83 @@ def generate_logs(searchbar):
     possible_logins = next(iter(filtered_logs), "")
     return filtered_logs
 
+def save_created_log():
+    logs = open_logins()
+    try:
+        with open ("people.txt", "a") as file:
+            file.write(f"{create_login}, 0\n")
+    except FileNotFoundError:
+        print("couldnt save log")
+
+def update_data():
+    global game_mode
+    try:
+        with open("people.txt", 'r') as file:
+            lines = file.readlines()
+
+        for i, line in enumerate(lines):
+            name, wins = map(str.strip, line.split(', '))
+            if winner == player1_name:
+                if name == player1_name:
+                    new_number = int(wins) + 1
+                    lines[i] = f"{name}, {new_number}\n"
+                    break
+            elif winner == player2_name:
+                if name == player2_name:
+                    new_number = int(wins) + 1
+                    lines[i] = f"{name}, {new_number}\n"
+                    break
+            
+        with open("people.txt", 'w') as file:
+            file.writelines(lines)            
+    except FileNotFoundError:
+        print("couldnt update logs")
+    game_mode = 4
+    
 def on_key_down(key):
     global searchbar, logs, first, game_mode, player1_name, player2_name, chosing_player, create_login
+    if key == keys.ESCAPE:
+        quit()
+        
     if game_mode <= -2:
         if first:
             searchbar = ""
             first = False
+            
         if key == keys.BACKSPACE:
             if game_mode > -4:
                 searchbar = searchbar[:-1]
             if game_mode <= -4:
-               create_login = create_login[:-1] 
+               create_login = create_login[:-1]
+               
         elif key.name in letters:
             if game_mode > -4:
                 searchbar += key.name
             if game_mode <= -4:
                 create_login += key.name
+                
+        elif key == keys.RETURN and game_mode <= -4:
+            if create_login == "":
+                pass
+            elif create_login in logs:
+                print("User was already registered. Game quited.")
+                quit()
+            elif game_mode == -4:
+                if create_login not in logs and create_login != "":
+                    save_created_log()
+                    player1_name = create_login
+                    chosing_player = "Player 2"
+                    first = True
+                    create_login = ""
+                    searchbar = f"{chosing_player}, please type in your username"
+                    game_mode = -2
+            elif game_mode == -5:
+                if create_login not in logs and create_login != "":
+                    save_created_log()
+                    player2_name = create_login
+                    game_mode = -1
+                    chosing_player = player1_name                    
+            
         elif key == keys.RETURN and possible_logins in logs:
             if game_mode == -3:
                 game_mode = -2
@@ -592,26 +653,14 @@ def on_key_down(key):
                 game_mode = -1
                 player2_name = possible_logins
                 chosing_player = player1_name
-            elif game_mode == -4:
-                player1_name = create_login
-                chosing_player = "Player 2"
-                first = True
-                create_login = ""
-                searchbar = f"{chosing_player}, please type in your username"
-                game_mode = -3
-            elif game_mode == -5:
-                player2_name = create_login
-                game_mode = -1
-                chosing_player = player1_name
-
+        
+            
         logs = generate_logs(searchbar)
         if key == keys.SPACE:
             if chosing_player == "Player 1":
                 game_mode = -4
             if chosing_player == "Player 2":
                 game_mode = -5
-    if key == keys.ESCAPE:
-        quit()
             
 # Cursor
 cursor = Rect((550, 550), (1, 1))
@@ -669,7 +718,7 @@ def initialize():
     player2.did_i_hit(player1)
 
 def draw():
-    global winning_color    
+    global winning_color, game_mode    
     screen.clear()
     screen.fill(WHITE)
     Background.draw()
@@ -735,8 +784,12 @@ def draw():
         if game_mode == 0:
             screen.draw.text(countdown_as_str, (WIDTH / 2, HEIGHT / 2), fontsize=100, color="orange", owidth=1, ocolor="white")
     
-        if game_mode == 2:
+        if game_mode >= 2:
             WINNER = f"Winner is {winner}!"
+            if winning_color in dark_colors:
+                o_color = "white"
+            else:
+                o_color = "black"            
             if life_player1 == "0" and life_player2 == "0":
                 WINNER = "Winner is no one!"
                 winning_color = "orange"
@@ -757,11 +810,19 @@ def update():
         player1.update()
         player2.update()
     if game_mode == 2:
-        ninja1.x = WIDTH -rand
+        ninja1.x = WIDTH - rand
         ninja1.y = HEIGHT / 1.5
         ninja1.image = f"ninja_{ChosenColor_1}_left.png"
         ninja2.x = rand
         ninja2.y = HEIGHT / 1.5
         ninja2.image = f"ninja_{ChosenColor_2}.png"
+        if winner != player1_name and winner != player2_name:
+            game_mode = 4
+        else:
+            game_mode = 3
+    if game_mode == 3:
+        open_logins()
+        update_data()
+        
 
 pgzrun.go()
